@@ -8,7 +8,8 @@ resource "aws_iam_role" "redshift-iam-role" {
     {
       "Action": "sts:AssumeRole",
       "Principal": {
-        "Service": "redshift.amazonaws.com"
+        "Service": "redshift.amazonaws.com",
+        "AWS": "arn:aws:iam::315911064428:user/matthijs.kok"
       },
       "Effect": "Allow",
       "Sid": ""
