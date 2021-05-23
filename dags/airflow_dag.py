@@ -2,18 +2,10 @@ from datetime import datetime, timedelta
 import os
 from airflow import DAG
 from airflow.operators.dummy_operator import DummyOperator
-#from airflow.operators import (LoadFactOperator)
-from operators.stage_redshift import StageToRedshiftOperator
-from operators.load_fact import LoadFactOperator
-from operators.load_dimension import LoadDimensionOperator
-from operators.data_quality import DataQualityOperator
-from helpers.sql_queries import SqlQueries
+from airflow.operators import (StageToRedshiftOperator, LoadFactOperator,
+                                LoadDimensionOperator, DataQualityOperator)
+from helpers import SqlQueries
 from airflow.operators.postgres_operator import PostgresOperator
-
-"""
-This DAG defines and runs the data pipeline to create tables, stage data and run several 
-dimension tables and a fact table. See for more information the README file
-"""
 
 default_args = {
     'owner': 'matthijs.kok',
@@ -24,20 +16,13 @@ default_args = {
     'catchup': False
 }
 
-dag = DAG('airflow_dag',
+dag = DAG('udac_example_dag',
           default_args=default_args,
           description='Load and transform data in Redshift with Airflow',
           schedule_interval='0 * * * *'
         )
 
 start_operator = DummyOperator(task_id='Begin_execution',  dag=dag)
-
-create_tables=PostgresOperator(
-    task_id='create_tables',
-    dag=dag,
-    postgres_conn_id='aws_redshift_dwh',
-    sql='create_tables.sql'
-)
 
 stage_events_to_redshift = StageToRedshiftOperator(
     task_id='stage_events',
@@ -64,7 +49,8 @@ load_songplays_table = LoadFactOperator(
     dag=dag,
     aws_redshift_id='aws_redshift_dwh',
     table_name = 'songplays',
-    sql = SqlQueries.songplay_table_insert
+    sql = SqlQueries.songplay_table_insert,
+    operation = 'insert'
 )
 
 load_user_dimension_table = LoadDimensionOperator(
@@ -72,7 +58,8 @@ load_user_dimension_table = LoadDimensionOperator(
     dag=dag,
     aws_redshift_id='aws_redshift_dwh',
     table_name = 'users',
-    sql=SqlQueries.user_table_insert
+    sql=SqlQueries.user_table_insert,
+    operation = 'insert'
 )
 
 load_song_dimension_table = LoadDimensionOperator(
@@ -80,7 +67,8 @@ load_song_dimension_table = LoadDimensionOperator(
     dag=dag,
     aws_redshift_id='aws_redshift_dwh',
     table_name = 'songs',
-    sql=SqlQueries.song_table_insert
+    sql=SqlQueries.song_table_insert,
+    operation = 'insert'
 )
 
 load_artist_dimension_table = LoadDimensionOperator(
@@ -88,7 +76,8 @@ load_artist_dimension_table = LoadDimensionOperator(
     dag=dag,
     aws_redshift_id='aws_redshift_dwh',
     table_name = 'artists',
-    sql=SqlQueries.artist_table_insert
+    sql=SqlQueries.artist_table_insert,
+    operation = 'insert'
 )
 
 load_time_dimension_table = LoadDimensionOperator(
@@ -96,21 +85,26 @@ load_time_dimension_table = LoadDimensionOperator(
     dag=dag,
     aws_redshift_id='aws_redshift_dwh',
     table_name = 'time',
-    sql=SqlQueries.time_table_insert
+    sql=SqlQueries.time_table_insert,
+    operation = 'truncate'
 )
 
 run_quality_checks = DataQualityOperator(
     task_id='Run_data_quality_checks',
     dag=dag,
     aws_redshift_id='aws_redshift_dwh',
-    table_names=['songplays', 'users', 'songs', 'artists', 'time']
+    table_names=['songplays', 'users', 'songs', 'artists', 'time'],
+    dq_checks=[{'check_sql': "SELECT COUNT(*) FROM users WHERE userid is null", 'expected_result': 0},
+               {'check_sql': "SELECT COUNT(*) FROM songs WHERE songid is null", 'expected_result':0},
+    	       {'check_sql': "SELECT COUNT(*) FROM artists WHERE artistid is null", 'expected_result':0},
+    	       {'check_sql': "SELECT COUNT(*) FROM time WHERE start_time is null", 'expected_result':0},
+    	       {'check_sql': "SELECT COUNT(*) FROM songplays WHERE playid is null", 'expected_result':0}]
 )
 
 end_operator = DummyOperator(task_id='Stop_execution',  dag=dag)
 
-start_operator >> create_tables
-create_tables >> stage_events_to_redshift
-create_tables >> stage_songs_to_redshift
+start_operator >> stage_songs_to_redshift
+start_operator >> stage_events_to_redshift
 stage_events_to_redshift >> load_songplays_table
 stage_songs_to_redshift >> load_songplays_table
 load_songplays_table >> load_song_dimension_table
