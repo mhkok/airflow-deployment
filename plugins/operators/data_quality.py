@@ -6,7 +6,6 @@ class DataQualityOperator(BaseOperator):
     """
     This class runs data quality checks on the tables created.
     """
-
     ui_color = '#89DA59'
     
     count_sql = """
@@ -17,11 +16,13 @@ class DataQualityOperator(BaseOperator):
     def __init__(self,
                  aws_redshift_id='',
                  table_names='',
+                 dq_checks='',
                  *args, **kwargs):
 
         super(DataQualityOperator, self).__init__(*args, **kwargs)
         self.aws_redshift_id = aws_redshift_id
         self.table_names = table_names
+        self.dq_checks = dq_checks
 
 
     def execute(self, context):
@@ -38,4 +39,16 @@ class DataQualityOperator(BaseOperator):
             if len(records_count) < 1:
                 self.log.error(f"Failed data quality check for table {table}")
             self.log.info(f"Data quality check finished for table {table} with {records_count} records")
+            
+        for check in self.dq_checks:
+            sql = check.get('check_sql')
+            exp_result = check.get('expected_result')
+            records_query = redshift.get_records(sql)[0]
+
+            if exp_result != records_query[0]:
+                self.log.info(f"Test failed for {sql}")
+            
+            else: 
+                self.log.info(f"Test success for {sql}")
+          
             
