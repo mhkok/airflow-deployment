@@ -1,4 +1,4 @@
-# spark-data-lake
+# Airflow Deployment
 
 ## Introduction
 This project builds a DWH Redshift cluster in AWS, builds a Docker based airflow deployment locally on your machine and, finally Airflow Data pipelines that can be run through 'DAGs'. Under `/terraform` directory the infrastructure as code is defined. In `dags` directory the DAG is defined and under `operators` several different operators for Airflow are defined.
