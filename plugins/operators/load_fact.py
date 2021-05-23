@@ -1,16 +1,17 @@
 from airflow.hooks.postgres_hook import PostgresHook
-from airflow.models.baseoperator import BaseOperator
+from airflow.models import BaseOperator
 from airflow.utils.decorators import apply_defaults
 
 class LoadFactOperator(BaseOperator):
-    """
-    This class loads the fact table as described in the README file
-    Initially it loads the input parameters from the DAG and then inserts the actual data into the tables
-    """
+
     ui_color = '#F98866'
     
     insert_sql = """
                  INSERT INTO {} {}
+                 """
+    
+    delete_sql = """
+                 DELETE FROM {}
                  """
     
     @apply_defaults
@@ -18,26 +19,43 @@ class LoadFactOperator(BaseOperator):
                  aws_redshift_id='',
                  sql='',
                  table_name='',
+                 operation='',
                  *args, **kwargs):
 
         super(LoadFactOperator, self).__init__(*args, **kwargs)
         self.aws_redshift_id = aws_redshift_id
         self.table_name = table_name
         self.sql = sql
+        self.operation = operation
 
     def execute(self, context):
         """
         This function loads the data into the fact table. It requires the Redshift ID, Table name & SQL statement.
+        Depending on the operation defined in the DAG it will first delete the table and then insert data OR
+        append the data in the table
         """
-        self.log.info("Populate FACT data")
         redshift = PostgresHook(postgres_conn_id = self.aws_redshift_id)
         
-        format_insert = LoadFactOperator.insert_sql.format(
-            self.table_name,
-            self.sql
-        )
+        if self.operation == 'insert':
+            self.log.info("INSERT OPERATION: Populate fact DATA")
+            format_insert = LoadFactOperator.insert_sql.format(
+                self.table_name,
+                self.sql)
+       
+            redshift.run(format_insert)
+            self.log.info('Finished Populate fact Data for TABLE {}'.format(self.table_name))
         
-        redshift.run(format_insert)
+        elif self.operation == 'truncate':
+           self.log.info("TRUNCATE OPERATION: DELETE Fact DATA First")
+           format_delete = LoadFactOperator.delete_sql.format(self.table_name)
+           
+           self.log.info("Populate Dimension DATA")
+           format_insert = LoadFactOperator.insert_sql.format(
+                self.table_name,
+                self.sql)
+            
+           redshift.run(format_delete)
+           redshift.run(format_insert)
         
-        
-        self.log.info('Populate FACT data finished')
+           self.log.info('Finished Populate Fact Data for TABLE {}'.format(self.table_name))
+
