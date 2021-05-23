@@ -2,9 +2,12 @@ from datetime import datetime, timedelta
 import os
 from airflow import DAG
 from airflow.operators.dummy_operator import DummyOperator
-from airflow.operators import (StageToRedshiftOperator, LoadFactOperator,
-                                LoadDimensionOperator, DataQualityOperator)
-from helpers import SqlQueries
+#from airflow.operators import (LoadFactOperator)
+from operators.stage_redshift import StageToRedshiftOperator
+from operators.load_fact import LoadFactOperator
+from operators.load_dimension import LoadDimensionOperator
+from operators.data_quality import DataQualityOperator
+from helpers.sql_queries import SqlQueries
 from airflow.operators.postgres_operator import PostgresOperator
 
 """
@@ -14,7 +17,11 @@ dimension tables and a fact table. See for more information the README file
 
 default_args = {
     'owner': 'matthijs.kok',
-    'start_date': datetime(2019, 1, 12),
+    'start_date': datetime(2021, 1, 1),
+    'depends_on_past': False,
+    'retries': 3,
+    'retry_delay': timedelta(minutes=5),
+    'catchup': False
 }
 
 dag = DAG('airflow_dag',
