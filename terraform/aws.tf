@@ -3,12 +3,12 @@ terraform {
     aws = {
       source  = "hashicorp/aws"
       version = "~> 3.0"
-      region  = "eu-west-1"
+      region  = "us-west-2"
       profile = "matthijs.kok"
     }
   }
 }
 
 provider "aws" {
-    region = "eu-west-1"
+    region = "us-west-2"
 }

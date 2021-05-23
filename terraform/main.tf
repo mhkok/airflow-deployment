@@ -3,7 +3,7 @@ module "sg" {
   version = "~> 3.0"
 
   name   = "dwh-redshift"
-  vpc_id = "vpc-d0f07fb4"
+  vpc_id = "vpc-ee4d368a" #EU-WEST-1 "vpc-d0f07fb4"
 
   # Allow ingress rules to be accessed only within current VPC
   ingress_cidr_blocks = var.ingress_cidr_blocks
@@ -14,7 +14,7 @@ module "sg" {
 
 module "redshift" {
   source  = "terraform-aws-modules/redshift/aws"
-  version = "~> 2.0"
+  version = "~> 3.0"
 
   cluster_identifier      = "dwh-cluster"
   cluster_node_type       = "dc2.large"
@@ -30,7 +30,7 @@ module "redshift" {
   wlm_json_configuration = "[{\"query_concurrency\": 5}]"
 
   # DB Subnet Group Inputs
-  subnets = ["subnet-22a1097a", "subnet-fc43d88a", "subnet-a6412fc2"]
+  subnets = ["subnet-b54d659d", "subnet-e35f3787", "subnet-2a43c05c"] # EU-WEST-1 "subnet-22a1097a", "subnet-fc43d88a", "subnet-a6412fc2"
   vpc_security_group_ids = [module.sg.this_security_group_id]
 
   # IAM Roles
