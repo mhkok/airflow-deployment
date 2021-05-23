@@ -3,7 +3,10 @@ from airflow.models import BaseOperator
 from airflow.utils.decorators import apply_defaults
 
 class LoadDimensionOperator(BaseOperator):
-
+    """
+    This class loads the dimension tables as described in the README file
+    Initially it loads the input parameters from the DAG and then inserts the actual data into the tables
+    """
     ui_color = '#80BD9E'
     
     insert_sql = """
@@ -23,6 +26,9 @@ class LoadDimensionOperator(BaseOperator):
         self.sql = sql
 
     def execute(self, context):
+        """
+        This function loads the data into the dimension tables. It requires the Redshift ID, Table name & SQL statements.
+        """
         self.log.info("Populate Dimension DATA")
         redshift = PostgresHook(postgres_conn_id = self.aws_redshift_id)
         
@@ -32,6 +38,5 @@ class LoadDimensionOperator(BaseOperator):
         )
         
         redshift.run(format_insert)
-        
         
         self.log.info('Finished Populate Dimension Data for TABLE {}'.format(self.table_name))

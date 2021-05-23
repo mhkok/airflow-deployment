@@ -7,12 +7,17 @@ from airflow.operators import (StageToRedshiftOperator, LoadFactOperator,
 from helpers import SqlQueries
 from airflow.operators.postgres_operator import PostgresOperator
 
+"""
+This DAG defines and runs the data pipeline to create tables, stage data and run several 
+dimension tables and a fact table. See for more information the README file
+"""
+
 default_args = {
     'owner': 'matthijs.kok',
     'start_date': datetime(2019, 1, 12),
 }
 
-dag = DAG('udac_example_dag',
+dag = DAG('airflow_dag',
           default_args=default_args,
           description='Load and transform data in Redshift with Airflow',
           schedule_interval='0 * * * *'

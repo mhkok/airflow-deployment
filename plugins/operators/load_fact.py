@@ -3,7 +3,10 @@ from airflow.models import BaseOperator
 from airflow.utils.decorators import apply_defaults
 
 class LoadFactOperator(BaseOperator):
-
+    """
+    This class loads the fact table as described in the README file
+    Initially it loads the input parameters from the DAG and then inserts the actual data into the tables
+    """
     ui_color = '#F98866'
     
     insert_sql = """
@@ -23,6 +26,9 @@ class LoadFactOperator(BaseOperator):
         self.sql = sql
 
     def execute(self, context):
+        """
+        This function loads the data into the fact table. It requires the Redshift ID, Table name & SQL statement.
+        """
         self.log.info("Populate FACT data")
         redshift = PostgresHook(postgres_conn_id = self.aws_redshift_id)
         
