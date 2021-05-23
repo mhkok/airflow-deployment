@@ -33,3 +33,9 @@ override.tf.json
 ## Ignore pycache
 **/__pycache__/**
 pycache
+
+## ignore VS code
+.vscode
+
+## ignore logs Airflow
+/logs
